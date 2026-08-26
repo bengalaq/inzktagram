@@ -1,0 +1,8 @@
+[package]
+name = "feed-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+sha2 = { workspace = true }

@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  RISC0_VERSION: "3.0.6"
+
+jobs:
+  test:
+    name: Tests (feed-core + pipeline ZK en dev-mode)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache de cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Instalar toolchain RISC Zero (rzup)
+        run: |
+          curl -L https://risczero.com/install | bash
+          export PATH="$HOME/.risc0/bin:$PATH"
+          rzup install rust
+          rzup install cargo-risczero ${{ env.RISC0_VERSION }}
+          rzup install r0vm ${{ env.RISC0_VERSION }}
+          echo "$HOME/.risc0/bin" >> "$GITHUB_PATH"
+
+      - name: Tests unitarios de los algoritmos (feed-core)
+        run: cargo test -p feed-core
+
+      - name: Completeness del pipeline ZK (guest == host, dev-mode)
+        run: cargo test -p inzktagram-server --test completeness_dev
+        env:
+          RISC0_DEV_MODE: "1"
+
+      - name: Build del workspace (server, verifier-cli, zkbench)
+        run: cargo build --workspace
+        env:
+          RISC0_DEV_MODE: "1"
+
+  # Pruebas STARK reales (completeness + soundness): lentas, se corren a
+  # demanda o semanalmente, no en cada push.
+  real-proofs:
+    name: Completeness y soundness con pruebas STARK reales
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Instalar toolchain RISC Zero (rzup)
+        run: |
+          curl -L https://risczero.com/install | bash
+          export PATH="$HOME/.risc0/bin:$PATH"
+          rzup install rust
+          rzup install cargo-risczero ${{ env.RISC0_VERSION }}
+          rzup install r0vm ${{ env.RISC0_VERSION }}
+          echo "$HOME/.risc0/bin" >> "$GITHUB_PATH"
+      - name: Pruebas reales
+        run: cargo test --release -p inzktagram-server --test real_proofs -- --ignored
+
+  web:
+    name: Build del frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - run: npm run build
+        working-directory: web

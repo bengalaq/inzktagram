@@ -1,0 +1,17 @@
+[package]
+name = "verifier-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "verifier-cli"
+path = "src/main.rs"
+
+[dependencies]
+feed-core = { workspace = true }
+inzktagram-methods = { workspace = true }
+risc0-zkvm = { workspace = true }
+anyhow = { workspace = true }
+hex = { workspace = true }
+bincode = { workspace = true }
+clap = { version = "4", features = ["derive"] }
