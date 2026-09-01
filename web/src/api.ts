@@ -119,14 +119,14 @@ export const ALGORITHMS = [
     name: "Engagement",
     tagline: "Como las redes de siempre",
     description:
-      "Maximiza tu tiempo en la plataforma: recencia agresiva, contenido viral y corto, novedad constante de cuentas que no seguís. Es el modelo de negocio de la atención.",
+      "Maximiza tu tiempo en la plataforma: recencia agresiva, ganchos virales cortos y cuentas que no seguís inyectadas como «novedad». El feed se llena de likes, FOMO y hilos. Es el modelo de negocio de la atención.",
   },
   {
     id: 2,
     name: "Bienestar",
     tagline: "Protege tu atención",
     description:
-      "Solo cuentas que seguís, en orden mayormente cronológico. Prioriza contenido largo y reflexivo, limita la repetición y no usa señales de viralidad. Sin loops de dopamina.",
+      "Solo cuentas que seguís, en orden mayormente cronológico. Prioriza textos largos, entierra los ganchos cortos y no usa likes ni viralidad. El feed se siente como hablar con gente conocida, sin tragamonedas.",
   },
   {
     id: 3,

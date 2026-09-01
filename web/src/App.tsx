@@ -327,7 +327,11 @@ export default function App() {
             <p className="dev-note">RISC0_DEV_MODE: receipts de desarrollo</p>
           )}
           {proof?.status === "proved" && feed && (
-            <a className="btn btn-ghost btn-full" href={api.receiptUrl(feed.view_id)} download>
+            <a
+              className="btn btn-ghost btn-full"
+              href={api.receiptUrl(feed.view_id)}
+              download={`inzktagram_view_${feed.view_id}.receipt`}
+            >
               Descargar receipt
             </a>
           )}

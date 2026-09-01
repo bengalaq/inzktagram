@@ -3,8 +3,10 @@
 //! Permite a un usuario (o auditor) verificar SIN CONFIAR EN EL SERVIDOR que
 //! el feed que recibió fue calculado con el algoritmo que eligió:
 //!
-//!   verifier-cli inzktagram_view_42.receipt --expect-algorithm 2 \
+//!   ./verify.sh inzktagram_view_42.receipt --expect-algorithm 2 \
 //!       --expect-feed-hash <hex del feed mostrado>
+//!
+//! El receipt tiene que estar en download_receipts/.
 //!
 //! El image ID por defecto es el del guest compilado junto a este binario:
 //! cualquiera puede recompilar el guest desde el código fuente y comprobar

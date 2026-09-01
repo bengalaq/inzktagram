@@ -15,7 +15,10 @@ export default function UserPicker({ users, onPick }: Props) {
           <LeafIcon size={16} /> Una red social donde el algoritmo lo elegís
           vos, y podés probarlo.
         </p>
-        <p className="picker-hint">Elegí un perfil para entrar a la demo</p>
+        <p className="picker-hint">
+          Elegí un perfil. Las cuentas en verde publican despacio; las de
+          rojo, el loop de atención. El feed cambia según el algoritmo.
+        </p>
         <div className="picker-grid">
           {users.map((u) => (
             <button key={u.id} className="picker-user" onClick={() => onPick(u)}>

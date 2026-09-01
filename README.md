@@ -5,10 +5,10 @@ conocimiento cero (RISC Zero zkVM).
 
 El usuario elige en sus ajustes cuál de 3 algoritmos ordena su feed:
 
-1. **Engagement** — maximiza retención (recencia agresiva, contenido viral y
-   corto, inyección de novedad). Modela las redes actuales.
-2. **Bienestar** — protege la atención: solo cuentas seguidas, orden
-   mayormente cronológico, prioriza contenido largo, sin señales de viralidad.
+1. **Engagement** — maximiza retención: ganchos virales cortos, miles de
+   likes y cuentas que no seguís (el loop de dopamina de las redes actuales).
+2. **Bienestar** — protege la atención: solo cuentas seguidas, textos largos
+   en orden mayormente cronológico, sin likes ni carnada.
 3. **Mixto** — combinación ponderada (60/40) de los dos anteriores.
 
 La plataforma acompaña cada feed con un **receipt de RISC Zero** que prueba
@@ -93,48 +93,54 @@ puede ser forzada a producir un receipt válido de un cómputo que no ocurrió.
 
 ## 4. Cómo correrlo
 
-Requisitos: Rust ≥ 1.85, Node 20, toolchain RISC Zero
-([rzup](https://dev.risczero.com/api/zkvm/install)). En Windows usar **WSL2 con Ubuntu 24.04** (RISC Zero 3.0.6 necesita glibc ≥ 2.34; Ubuntu 20.04 no alcanza). Desde PowerShell:
+**Un comando** (Docker: mismo flujo en Windows, macOS y Linux). Requisito:
+[Docker Desktop](https://www.docker.com/products/docker-desktop/) con el
+motor en marcha.
+
+```bash
+./run.sh          # Linux / macOS / WSL
+```
 
 ```powershell
-# Tests de completeness (guest == host) en dev-mode
-.\scripts\dev.ps1 test
-
-# Servidor en modo desarrollo (receipts de desarrollo, instantáneos)
-.\scripts\dev.ps1 run
+.\run.cmd         # Windows (cmd o PowerShell)
 ```
 
-O desde bash en Ubuntu 24.04:
+Abrir `http://localhost:8080`. La primera vez compila RISC Zero y puede
+tardar varios minutos; después Docker reusa la imagen. Ctrl+C detiene el
+contenedor.
+
+Por defecto genera **pruebas STARK reales** (`RISC0_DEV_MODE=0`). El primer
+receipt tarda varios minutos en CPU; los siguientes también, uno por cada
+vista de feed. Para iterar la UI sin esperar al prover:
 
 ```bash
-# Toolchain ZK (una vez)
-curl -L https://risczero.com/install | bash
-rzup install
-
-# Frontend
-cd web && npm install && npm run build && cd ..
-
-# El script copia el repo a ~/inzktagram (filesystem Linux, sin espacios)
-# y corre ahí (risc0-build no ama las rutas con espacios de /mnt/c).
-bash scripts/wsl-dev.sh run                 # RISC0_DEV_MODE=1
-RISC0_DEV_MODE=0 bash scripts/wsl-dev.sh run  # pruebas STARK reales
+RISC0_DEV_MODE=1 docker compose up --build
 ```
 
-Abrir `http://localhost:8080`. Para desarrollo del frontend con hot reload:
-`cd web && npm run dev` (proxy a `:8080`).
+Verificar un receipt descargado, sin instalar Rust en el host. Guardalo en
+`download_receipts/` (dentro de este proyecto) y, **desde `inzktagram/`**:
 
-### Verificación independiente
-
-Descargar el receipt desde la app (botón «Descargar receipt») y:
+```powershell
+.\verify.cmd inzktagram_view_15.receipt --expect-algorithm 2 --expect-feed-hash <hash>
+```
 
 ```bash
-cargo run --release -p verifier-cli -- inzktagram_view_42.receipt \
-    --expect-algorithm 2 \
-    --expect-feed-hash <hash que muestra la app>
+./verify.sh inzktagram_view_15.receipt --expect-algorithm 2 --expect-feed-hash <hash>
 ```
 
-El image ID por defecto es el del guest compilado localmente: si el binario
-del servidor difiere del código fuente publicado, la verificación falla.
+Equivalente a mano (el contenedor ya monta `download_receipts` en `/receipts`):
+
+```powershell
+docker compose exec inzktagram verifier-cli /receipts/inzktagram_view_15.receipt --expect-algorithm 2 --expect-feed-hash <hash>
+```
+
+El image ID del guest va embebido en la imagen: si el receipt lo generó
+otro binario, la verificación falla.
+
+### Alternativa sin Docker (WSL Ubuntu 24.04)
+
+RISC Zero 3.0.6 necesita glibc ≥ 2.34. `.\scripts\dev.ps1 run` o
+`bash scripts/wsl-dev.sh run`. Frontend en hot reload: `cd web && npm run dev`.
 
 ## 5. Tests (completeness y soundness)
 

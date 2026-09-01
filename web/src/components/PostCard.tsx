@@ -35,10 +35,11 @@ export default function PostCard({ post }: { post: Post }) {
     lastTap.current = now;
   };
 
-  const short = post.content.length < 200;
+  const bait = post.content.length < 140 && post.likes >= 400;
+  const longform = post.content.length >= 300;
 
   return (
-    <article className="post-card">
+    <article className={`post-card ${bait ? "post-card-bait" : ""} ${longform ? "post-card-long" : ""}`}>
       <header className="post-head">
         <span className="avatar avatar-sm" style={{ background: post.avatar_color }}>
           {post.display_name[0]}
@@ -47,6 +48,7 @@ export default function PostCard({ post }: { post: Post }) {
           <span className="post-user">
             {post.username}
             {post.is_followed && <span className="follow-chip">seguís</span>}
+            {bait && !post.is_followed && <span className="bait-chip">tendencia</span>}
           </span>
           <span className="post-time">{timeAgo(post.created_at)}</span>
         </div>
@@ -56,7 +58,7 @@ export default function PostCard({ post }: { post: Post }) {
       </header>
 
       <div
-        className={`post-media g${post.id % GRADIENTS} ${short ? "post-media-short" : ""}`}
+        className={`post-media g${post.id % GRADIENTS} ${bait ? "post-media-bait" : ""} ${longform ? "post-media-long" : ""}`}
         onClick={doubleTap}
       >
         <p>{post.content}</p>

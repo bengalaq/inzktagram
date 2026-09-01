@@ -1,0 +1,18 @@
+services:
+  inzktagram:
+    build: .
+    image: inzktagram:local
+    ports:
+      - "8080:8080"
+    environment:
+      RISC0_DEV_MODE: ${RISC0_DEV_MODE:-0}
+      INZK_DB: /data/inzktagram.sqlite
+      INZK_WEB_DIST: /app/web/dist
+      RUST_LOG: ${RUST_LOG:-info}
+    volumes:
+      - inzktagram-data:/data
+      - ./download_receipts:/receipts:ro
+    restart: unless-stopped
+
+volumes:
+  inzktagram-data:

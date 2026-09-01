@@ -6,7 +6,7 @@
 set -euo pipefail
 export PATH="$HOME/.risc0/bin:$HOME/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 unset CARGO_TARGET_DIR
-export RISC0_DEV_MODE="${RISC0_DEV_MODE:-1}"
+export RISC0_DEV_MODE="${RISC0_DEV_MODE:-0}"
 export RISC0_GUEST_LOGFILE="${RISC0_GUEST_LOGFILE:-$HOME/inzktagram-guest.log}"
 
 SRC="$(cd "$(dirname "$0")/.." && pwd)"

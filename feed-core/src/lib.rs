@@ -69,10 +69,10 @@ impl Default for Params {
         Self {
             w_recency: 40,
             w_engagement: 25,
-            w_short: 120,
-            w_viral: 12,
+            w_short: 180,
+            w_viral: 18,
             w_long_minutes: 30,
-            novelty_interval: 4,
+            novelty_interval: 3,
             max_consecutive_author: 2,
             mix_wellbeing_pct: 60,
             feed_len: 30,
@@ -203,14 +203,17 @@ pub fn engagement_score(c: &Candidate, now: u64, p: &Params) -> i64 {
 }
 
 /// Algoritmo 2 — Bienestar: base cronológica; un post largo (>= 300 chars)
-/// puede adelantarse hasta `w_long_minutes` minutos. Sin señales de viralidad.
+/// puede adelantarse hasta `w_long_minutes` minutos. Los ganchos cortos
+/// (< 120 chars) se retrasan un día entero: aunque vengan de cuentas seguidas,
+/// no colonizan el feed. Sin likes, comentarios ni viralidad.
 pub fn wellbeing_score(c: &Candidate, _now: u64, p: &Params) -> i64 {
     let long_bonus = if c.length_chars >= 300 {
         p.w_long_minutes * 60
     } else {
         0
     };
-    c.created_at as i64 + long_bonus
+    let short_penalty = if c.length_chars < 120 { 86_400 } else { 0 };
+    c.created_at as i64 + long_bonus - short_penalty
 }
 
 /// Penalización usada solo por el algoritmo mixto para relegar (sin excluir)
@@ -470,12 +473,47 @@ mod tests {
     #[test]
     fn engagement_injects_novelty_slot() {
         // 10 posts seguidos con mucho score + 1 no seguido mediocre:
-        // el no seguido debe aparecer en la posición novelty_interval (4ª).
+        // el no seguido debe aparecer en la posición novelty_interval (3ª).
         let mut cands: Vec<Candidate> =
             (0..10).map(|i| cand(i + 1, i + 1, 5 + i, 500, 50, 60, true)).collect();
         cands.push(cand(99, 42, 2_000, 5, 0, 600, false));
         let feed = rank(&input(ALG_ENGAGEMENT, cands));
-        assert_eq!(feed[3], 99, "la novedad no se inyectó en el slot 4: {feed:?}");
+        assert_eq!(feed[2], 99, "la novedad no se inyectó en el slot 3: {feed:?}");
+    }
+
+    #[test]
+    fn wellbeing_buries_short_bait_from_followed() {
+        // Un gancho viral reciente de una cuenta seguida no le gana a un
+        // texto largo un poco más viejo: bienestar no usa likes.
+        let cands = vec![
+            cand(1, 1, 8, 9_000, 400, 70, true),
+            cand(2, 2, 90, 12, 2, 420, true),
+        ];
+        assert_eq!(rank(&input(ALG_WELLBEING, cands))[0], 2);
+    }
+
+    #[test]
+    fn demo_shape_splits_feeds() {
+        // Forma de la demo: cuentas seguidas publican largo y despacio;
+        // las no seguidas, carnada reciente con miles de likes.
+        let mut cands = Vec::new();
+        for i in 0..8 {
+            cands.push(cand(i + 1, 1, 200 + i * 30, 20, 4, 420, true));
+        }
+        for i in 0..12 {
+            cands.push(cand(100 + i, 50, 3 + i, 4_000 + i as u32 * 100, 300, 55, false));
+        }
+        let e = rank(&input(ALG_ENGAGEMENT, cands.clone()));
+        let w = rank(&input(ALG_WELLBEING, cands));
+        assert!(
+            e.iter().take(8).all(|id| *id >= 100),
+            "engagement debería abrir con carnada: {e:?}"
+        );
+        assert!(
+            w.iter().all(|id| *id < 100),
+            "bienestar no debería mostrar cuentas no seguidas: {w:?}"
+        );
+        assert_ne!(e, w);
     }
 
     #[test]

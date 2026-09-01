@@ -352,6 +352,17 @@ code.hash-block {
   border-radius: 999px;
 }
 
+.bait-chip {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #d94c6a;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
 .post-time {
   font-size: 12px;
   color: var(--muted);
@@ -397,11 +408,49 @@ code.hash-block {
   white-space: pre-wrap;
 }
 
-.post-media-short p {
+.post-media-short p,
+.post-media-bait p {
   font-size: 21px;
   font-weight: 600;
   text-align: center;
   line-height: 1.5;
+}
+
+.post-card-bait {
+  border-color: #f0c4cb;
+}
+
+.post-media-bait {
+  min-height: 280px;
+  padding: 28px 22px;
+}
+
+.post-media-bait.g0 { background: linear-gradient(160deg, #f6cdd4 0%, #fbe6c8 100%); }
+.post-media-bait.g1 { background: linear-gradient(160deg, #f8d0c4 0%, #f6c9de 100%); }
+.post-media-bait.g2 { background: linear-gradient(160deg, #f3c4d8 0%, #fde0c4 100%); }
+.post-media-bait.g3 { background: linear-gradient(160deg, #f7c8b8 0%, #f5d0e8 100%); }
+.post-media-bait.g4 { background: linear-gradient(160deg, #f9d4b8 0%, #f0c4d0 100%); }
+.post-media-bait.g5 { background: linear-gradient(160deg, #f4c8c8 0%, #f8dcc0 100%); }
+
+.post-media-bait p {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #5a2430;
+}
+
+.post-card-long .post-media-long {
+  min-height: 0;
+  align-items: flex-start;
+  padding: 28px 26px 32px;
+}
+
+.post-media-long p {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.75;
+  text-align: left;
+  max-width: 420px;
 }
 
 .g0 { background: linear-gradient(150deg, #dcebe2 0%, #eef4ef 100%); }

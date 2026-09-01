@@ -161,17 +161,20 @@ export default function VerifyModal({
             <div className="verify-trustless">
               <h3>¿No confiás en esta pantalla? Verificalo vos</h3>
               <p>
-                Descargá el receipt y verificalo en tu máquina con el
-                verificador de código abierto:
+                Descargá el receipt, ponelo en la carpeta{" "}
+                <code>download_receipts</code> del proyecto y corré esto desde{" "}
+                <code>inzktagram/</code>:
               </p>
               {receiptUrl && (
-                <a className="btn btn-ghost" href={receiptUrl} download>
+                <a
+                  className="btn btn-ghost"
+                  href={receiptUrl}
+                  download={`inzktagram_view_${viewId}.receipt`}
+                >
                   <DownloadIcon size={16} /> Descargar receipt
                 </a>
               )}
-              <pre className="cli-sample">{`verifier-cli inzktagram_view_${viewId}.receipt \\
-  --expect-algorithm ${result.algorithmExpected} \\
-  --expect-feed-hash ${result.localFeedHash}`}</pre>
+              <pre className="cli-sample">{`.\\verify.cmd inzktagram_view_${viewId}.receipt --expect-algorithm ${result.algorithmExpected} --expect-feed-hash ${result.localFeedHash}`}</pre>
             </div>
           </>
         )}
