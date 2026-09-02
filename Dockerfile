@@ -35,10 +35,11 @@ COPY verifier-cli ./verifier-cli
 # El guest se compila igual; DEV_MODE solo afecta el proving en runtime.
 ENV RISC0_DEV_MODE=1 \
     CARGO_NET_RETRY=10
-RUN cargo build --release --bin server --bin verifier-cli \
+RUN cargo build --release --bin server --bin verifier-cli --bin zkbench \
     && mkdir -p /out \
     && cp target/release/server /out/server \
-    && cp target/release/verifier-cli /out/verifier-cli
+    && cp target/release/verifier-cli /out/verifier-cli \
+    && cp target/release/zkbench /out/zkbench
 
 # Imagen final: binarios + frontend. Sin Rust ni Node.
 FROM ubuntu:24.04
@@ -49,6 +50,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && mkdir -p /data /app/web/dist
 COPY --from=builder /out/server /usr/local/bin/server
 COPY --from=builder /out/verifier-cli /usr/local/bin/verifier-cli
+COPY --from=builder /out/zkbench /usr/local/bin/zkbench
 COPY --from=risc0 /root/.cargo/bin/r0vm /usr/local/bin/r0vm
 COPY --from=web /web/dist /app/web/dist
 ENV INZK_WEB_DIST=/app/web/dist \

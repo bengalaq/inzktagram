@@ -1,0 +1,9 @@
+# hardware: AMD Ryzen 7 2700X Eight-Core Processor (16 threads), os=linux
+# image_id: dc540a23ea9f26218acb7185a2352ce6d6d88370088847085eb506ee06bbb812
+n,algorithm,algorithm_name,user_cycles,proving_ms,verify_us,receipt_kb,native_us,dev_mode
+25,1,Engagement,205114,47510,19535,251.0,19,false
+25,2,Bienestar,172018,58193,20973,251.0,6,false
+25,3,Mixto,209053,44878,19424,251.0,10,false
+50,1,Engagement,332249,85473,20613,262.9,14,false
+50,2,Bienestar,313917,94257,34801,262.9,8,false
+50,3,Mixto,392111,96736,20815,262.9,16,false

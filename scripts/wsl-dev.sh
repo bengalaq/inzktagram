@@ -31,6 +31,7 @@ case "${1:-run}" in
   test)
     cargo test -p feed-core
     cargo test -p inzktagram-server --test completeness_dev
+    cargo test -p inzktagram-server --test application_checks
     ;;
   build)
     cargo build --release -p inzktagram-server --bin server -p verifier-cli

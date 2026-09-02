@@ -13,7 +13,7 @@ if (-not (Test-Path $dir)) {
 }
 
 if ($args.Count -lt 1) {
-    Write-Host "Uso: .\verify.ps1 <archivo.receipt|view_id> [--expect-algorithm N] [--expect-feed-hash HASH]"
+    Write-Host "Uso: .\verify.ps1 <archivo.receipt|view_id> [--expect-algorithm N] [--expect-feed-hash HASH] [--candidates dump.json]"
     Write-Host ""
     Write-Host "Guardá el receipt descargado en:"
     Write-Host "  $dir"

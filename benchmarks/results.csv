@@ -1,0 +1,16 @@
+# hardware: AMD Ryzen 7 2700X Eight-Core Processor (16 threads), Linux (Docker Desktop on Windows)
+# image_id: dc540a23ea9f26218acb7185a2352ce6d6d88370088847085eb506ee06bbb812
+# N=25,50: real STARKs (RISC0_DEV_MODE=0). N=100,200: guest execution only — r0vm crashed during proving (rx len / OOM).
+n,algorithm,algorithm_name,user_cycles,proving_ms,verify_us,receipt_kb,native_us,dev_mode,notes
+25,1,Engagement,205114,47510,19535,251.0,19,false,stark
+25,2,Wellbeing,172018,58193,20973,251.0,6,false,stark
+25,3,Mixed,209053,44878,19424,251.0,10,false,stark
+50,1,Engagement,332249,85473,20613,262.9,14,false,stark
+50,2,Wellbeing,313917,94257,34801,262.9,8,false,stark
+50,3,Mixed,392111,96736,20815,262.9,16,false,stark
+100,1,Engagement,553116,,,,28,true,exec_only
+100,2,Wellbeing,584718,,,,15,true,exec_only
+100,3,Mixed,805402,,,,28,true,exec_only
+200,1,Engagement,1012518,,,,21,true,exec_only
+200,2,Wellbeing,1128749,,,,14,true,exec_only
+200,3,Mixed,1790794,,,,48,true,exec_only

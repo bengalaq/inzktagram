@@ -1,5 +1,7 @@
 import { User } from "../api";
+import { useI18n } from "../i18n";
 import { GearIcon, HomeIcon, PlusIcon, ShieldIcon } from "./Icons";
+import LangToggle from "./LangToggle";
 
 export type Page = "feed" | "settings";
 
@@ -22,6 +24,7 @@ export default function SideNav({
   onVerify,
   onSwitchUser,
 }: Props) {
+  const { t } = useI18n();
   return (
     <nav className="sidenav">
       <h1 className="logo" onClick={() => onGo("feed")}>
@@ -31,10 +34,10 @@ export default function SideNav({
         className={`nav-item ${page === "feed" ? "active" : ""}`}
         onClick={() => onGo("feed")}
       >
-        <HomeIcon /> <span>Inicio</span>
+        <HomeIcon /> <span>{t("navHome")}</span>
       </button>
       <button className="nav-item" onClick={onNewPost}>
-        <PlusIcon /> <span>Crear</span>
+        <PlusIcon /> <span>{t("navCreate")}</span>
       </button>
       <button className="nav-item" onClick={onVerify}>
         <span className="nav-icon-badge">
@@ -43,18 +46,20 @@ export default function SideNav({
             <span className={`badge-dot ${proofBadge === "ok" ? "ok" : "fail"}`} />
           )}
         </span>
-        <span>Verificar</span>
+        <span>{t("navVerify")}</span>
       </button>
       <button
         className={`nav-item ${page === "settings" ? "active" : ""}`}
         onClick={() => onGo("settings")}
       >
-        <GearIcon /> <span>Ajustes</span>
+        <GearIcon /> <span>{t("navSettings")}</span>
       </button>
 
       <div className="sidenav-spacer" />
 
-      <button className="nav-item nav-profile" onClick={onSwitchUser} title="Cambiar de perfil">
+      <LangToggle className="lang-toggle-nav" />
+
+      <button className="nav-item nav-profile" onClick={onSwitchUser} title={t("navSwitchUser")}>
         <span className="avatar avatar-sm" style={{ background: user.avatar_color }}>
           {user.display_name[0]}
         </span>

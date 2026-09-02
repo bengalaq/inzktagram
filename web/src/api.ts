@@ -8,6 +8,7 @@ export interface User {
 export interface Post {
   id: number;
   content: string;
+  content_en?: string | null;
   created_at: number;
   likes: number;
   comments: number;

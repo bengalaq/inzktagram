@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  algorithmName,
   api,
   FeedResponse,
   ProofStatus,
@@ -8,8 +7,10 @@ import {
   User,
 } from "./api";
 import { computeFeedHash } from "./hash";
+import { useI18n } from "./i18n";
 import BottomNav from "./components/BottomNav";
 import { RefreshIcon, ShieldIcon } from "./components/Icons";
+import LangToggle from "./components/LangToggle";
 import NewPostModal from "./components/NewPostModal";
 import PostCard from "./components/PostCard";
 import SettingsPage from "./components/SettingsPage";
@@ -33,12 +34,15 @@ export default function App() {
   const [showNewPost, setShowNewPost] = useState(false);
   const [showVerify, setShowVerify] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  const [verifyLabel, setVerifyLabel] = useState("");
+  const [verifyPhase, setVerifyPhase] = useState<"generating" | "checking" | null>(null);
   const [verifyResult, setVerifyResult] = useState<VerificationResult | null>(null);
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const verifyRun = useRef(0);
+  const { t, algorithmName } = useI18n();
+  const tRef = useRef(t);
+  tRef.current = t;
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -66,7 +70,7 @@ export default function App() {
       const f = await api.feed(u.id);
       setFeed(f);
     } catch (e) {
-      showToast(`Error cargando el feed: ${(e as Error).message}`);
+      showToast(tRef.current("toastFeedError", { msg: (e as Error).message }));
     } finally {
       setLoadingFeed(false);
     }
@@ -108,7 +112,7 @@ export default function App() {
   const publish = async (content: string) => {
     if (!user) return;
     await api.createPost(user.id, content);
-    showToast("Publicado. Tu feed se regeneró (con nueva prueba ZK).");
+    showToast(t("toastPublished"));
     await loadFeed(user);
   };
 
@@ -117,7 +121,7 @@ export default function App() {
     setSaving(true);
     try {
       await api.setAlgorithm(user.id, id);
-      showToast(`Algoritmo cambiado a ${algorithmName(id)}. Regenerando feed…`);
+      showToast(t("toastAlgChanged", { name: algorithmName(id) }));
       await loadFeed(user);
     } finally {
       setSaving(false);
@@ -127,11 +131,7 @@ export default function App() {
   const toggleMalicious = async (enabled: boolean) => {
     if (!user) return;
     await api.setMalicious(enabled);
-    showToast(
-      enabled
-        ? "Servidor malicioso activo: andá al feed y verificá la prueba."
-        : "Servidor honesto de nuevo."
-    );
+    showToast(enabled ? t("toastMaliciousOn") : t("toastMaliciousOff"));
     await loadFeed(user);
   };
 
@@ -144,22 +144,22 @@ export default function App() {
     setVerifyError(null);
     try {
       // 1. Esperar a que el worker termine la prueba (si aún no está).
-      setVerifyLabel("Generando la prueba STARK en la zkVM…");
+      setVerifyPhase("generating");
       let status = proof ?? (await api.proofStatus(feed.view_id));
       const deadline = Date.now() + 15 * 60 * 1000;
       while (status.status === "pending" || status.status === "proving") {
-        if (Date.now() > deadline) throw new Error("timeout esperando la prueba");
+        if (Date.now() > deadline) throw new Error(t("errTimeout"));
         await new Promise((r) => setTimeout(r, 2000));
         if (verifyRun.current !== run) return;
         status = await api.proofStatus(feed.view_id);
         setProof(status);
       }
       if (status.status === "failed") {
-        throw new Error(`el prover falló: ${status.error ?? "error desconocido"}`);
+        throw new Error(t("errProver", { msg: status.error ?? t("errUnknown") }));
       }
 
       // 2. Verificación criptográfica del receipt.
-      setVerifyLabel("Verificando el receipt…");
+      setVerifyPhase("checking");
       const server = await api.verifyProof(feed.view_id);
 
       // 3. Chequeos del lado del cliente, sin confiar en el servidor:
@@ -191,22 +191,23 @@ export default function App() {
       <UserPicker users={users} onPick={pickUser} />
     ) : (
       <div className="picker-screen">
+        <LangToggle className="lang-toggle-float" />
         <div className="spinner" />
       </div>
     );
   }
 
   const proofChip = (() => {
-    if (!proof) return { text: "prueba: …", cls: "" };
+    if (!proof) return { text: t("proofEllipsis"), cls: "" };
     switch (proof.status) {
       case "pending":
-        return { text: "prueba: en cola", cls: "chip-wait" };
+        return { text: t("proofQueued"), cls: "chip-wait" };
       case "proving":
-        return { text: "prueba: generándose…", cls: "chip-wait" };
+        return { text: t("proofProving"), cls: "chip-wait" };
       case "proved":
-        return { text: `prueba lista (${proof.proving_ms} ms)`, cls: "chip-ok" };
+        return { text: t("proofReady", { ms: proof.proving_ms ?? 0 }), cls: "chip-ok" };
       default:
-        return { text: "prueba: falló", cls: "chip-fail" };
+        return { text: t("proofFailed"), cls: "chip-fail" };
     }
   })();
 
@@ -234,12 +235,15 @@ export default function App() {
         <h1 className="logo" onClick={() => setPage("feed")}>
           inZKtagram
         </h1>
-        <button className="icon-btn" onClick={verify} aria-label="Verificar feed">
-          <span className="nav-icon-badge">
-            <ShieldIcon />
-            {proofBadge && <span className={`badge-dot ${proofBadge}`} />}
-          </span>
-        </button>
+        <div className="mobile-top-actions">
+          <LangToggle />
+          <button className="icon-btn" onClick={verify} aria-label={t("navVerifyFeed")}>
+            <span className="nav-icon-badge">
+              <ShieldIcon />
+              {proofBadge && <span className={`badge-dot ${proofBadge}`} />}
+            </span>
+          </button>
+        </div>
       </header>
 
       <main className="main">
@@ -260,30 +264,27 @@ export default function App() {
 
             <div className="verify-bar">
               <span className="alg-chip">
-                Feed: <strong>{algorithmName(feedAlgorithm)}</strong>
+                {t("feedLabel")}: <strong>{algorithmName(feedAlgorithm)}</strong>
               </span>
               <span className={`chip ${proofChip.cls}`}>{proofChip.text}</span>
-              {state?.malicious && <span className="chip chip-fail">demo maliciosa</span>}
+              {state?.malicious && <span className="chip chip-fail">{t("maliciousChip")}</span>}
               <span className="verify-bar-spacer" />
               <button
                 className="icon-btn"
-                title="Regenerar feed"
+                title={t("refreshFeed")}
                 onClick={() => loadFeed(user)}
               >
                 <RefreshIcon size={18} />
               </button>
               <button className="btn btn-verify" onClick={verify}>
-                <ShieldIcon size={16} /> Verificar
+                <ShieldIcon size={16} /> {t("navVerify")}
               </button>
             </div>
 
             {loadingFeed && <div className="feed-loading"><div className="spinner" /></div>}
             {!loadingFeed && feed?.posts.map((p) => <PostCard key={p.id} post={p} />)}
             {!loadingFeed && feed && feed.posts.length === 0 && (
-              <p className="muted feed-empty">
-                Tu feed está vacío. Con el algoritmo Bienestar solo ves cuentas
-                que seguís.
-              </p>
+              <p className="muted feed-empty">{t("feedEmpty")}</p>
             )}
           </div>
         )}
@@ -313,18 +314,18 @@ export default function App() {
 
         <div className="zk-card">
           <h3>
-            <ShieldIcon size={16} /> Estado ZK
+            <ShieldIcon size={16} /> {t("zkState")}
           </h3>
           <dl>
-            <dt>Algoritmo elegido</dt>
+            <dt>{t("zkAlgorithm")}</dt>
             <dd>{algorithmName(state?.algorithm_id ?? feedAlgorithm)}</dd>
-            <dt>Vista del feed</dt>
+            <dt>{t("zkView")}</dt>
             <dd>#{feed?.view_id ?? "—"}</dd>
-            <dt>Prueba</dt>
+            <dt>{t("zkProof")}</dt>
             <dd>{proofChip.text}</dd>
           </dl>
           {proof?.dev_mode && (
-            <p className="dev-note">RISC0_DEV_MODE: receipts de desarrollo</p>
+            <p className="dev-note">{t("zkDevMode")}</p>
           )}
           {proof?.status === "proved" && feed && (
             <a
@@ -332,13 +333,13 @@ export default function App() {
               href={api.receiptUrl(feed.view_id)}
               download={`inzktagram_view_${feed.view_id}.receipt`}
             >
-              Descargar receipt
+              {t("downloadReceipt")}
             </a>
           )}
         </div>
 
         <div className="suggestions">
-          <h4>Personas en inZKtagram</h4>
+          <h4>{t("people")}</h4>
           {others.slice(0, 5).map((u) => (
             <div key={u.id} className="suggestion">
               <span className="avatar avatar-sm" style={{ background: u.avatar_color }}>
@@ -367,7 +368,9 @@ export default function App() {
       <VerifyModal
         open={showVerify}
         loading={verifying}
-        loadingLabel={verifyLabel}
+        loadingLabel={
+          verifyPhase === "checking" ? t("verifyChecking") : t("verifyGenerating")
+        }
         result={verifyResult}
         error={verifyError}
         viewId={feed?.view_id ?? null}

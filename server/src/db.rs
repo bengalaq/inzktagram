@@ -24,6 +24,7 @@ pub fn open(path: &str) -> Result<Connection> {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             author_id INTEGER NOT NULL,
             content TEXT NOT NULL,
+            content_en TEXT,
             created_at INTEGER NOT NULL,
             likes INTEGER NOT NULL DEFAULT 0,
             comments INTEGER NOT NULL DEFAULT 0
@@ -60,5 +61,6 @@ pub fn open(path: &str) -> Result<Connection> {
         );
         "#,
     )?;
+    let _ = conn.execute("ALTER TABLE posts ADD COLUMN content_en TEXT", []);
     Ok(conn)
 }

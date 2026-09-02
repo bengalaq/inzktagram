@@ -167,6 +167,52 @@ code.hash-block {
   flex: 1;
 }
 
+.lang-toggle {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.lang-toggle button {
+  border: none;
+  background: transparent;
+  padding: 4px 11px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.lang-toggle button + button {
+  border-left: 1px solid var(--line);
+}
+
+.lang-toggle button.active {
+  background: var(--sage-soft);
+  color: var(--sage-dark);
+}
+
+.lang-toggle-nav {
+  margin: 0 12px 10px;
+  align-self: flex-start;
+}
+
+.lang-toggle-float {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+}
+
+.mobile-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .nav-profile {
   margin-bottom: 12px;
 }
@@ -569,6 +615,7 @@ code.hash-block {
 /* ---------- Selector de usuario ---------- */
 
 .picker-screen {
+  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;

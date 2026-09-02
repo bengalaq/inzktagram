@@ -173,6 +173,123 @@ pub fn hash_feed(post_ids: &[u64]) -> [u8; 32] {
 }
 
 // ---------------------------------------------------------------------------
+// Regla de candidatura (parte del programa: queda atada al image ID)
+// ---------------------------------------------------------------------------
+
+/// Un post público, sin la señal `is_followed` (esa se deriva del grafo).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PublicPost {
+    pub post_id: u64,
+    pub author_id: u64,
+    pub created_at: u64,
+    pub likes: u32,
+    pub comments: u32,
+    pub length_chars: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FollowEdge {
+    pub follower_id: u64,
+    pub followee_id: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CandidacyError {
+    UnsortedPostIds,
+    DuplicatePostId,
+    IncludesViewer,
+}
+
+impl core::fmt::Display for CandidacyError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            CandidacyError::UnsortedPostIds => write!(f, "candidates are not sorted by post_id"),
+            CandidacyError::DuplicatePostId => write!(f, "duplicate post_id in candidates"),
+            CandidacyError::IncludesViewer => write!(f, "candidates include the viewer's own posts"),
+        }
+    }
+}
+
+/// Reglas públicas que el guest exige antes de rankear.
+/// No prueban que el conjunto sea *completo* (eso exigiría un log de posts);
+/// sí impiden inputs mal formados y que el ranking se aplique a posts propios.
+pub fn check_candidacy(input: &FeedInput) -> Result<(), CandidacyError> {
+    let mut prev: Option<u64> = None;
+    for c in &input.candidates {
+        if c.author_id == input.config.user_id {
+            return Err(CandidacyError::IncludesViewer);
+        }
+        if let Some(p) = prev {
+            if c.post_id == p {
+                return Err(CandidacyError::DuplicatePostId);
+            }
+            if c.post_id < p {
+                return Err(CandidacyError::UnsortedPostIds);
+            }
+        }
+        prev = Some(c.post_id);
+    }
+    Ok(())
+}
+
+/// Reconstruye el vector canónico de candidatos a partir de datos públicos.
+/// Un auditor independiente puede hashear el resultado y compararlo con
+/// `journal.candidates_hash` sin confiar en el servidor.
+pub fn assemble_candidates(
+    viewer_id: u64,
+    posts: &[PublicPost],
+    follows: &[FollowEdge],
+) -> Vec<Candidate> {
+    let followed: std::collections::BTreeSet<u64> = follows
+        .iter()
+        .filter(|e| e.follower_id == viewer_id)
+        .map(|e| e.followee_id)
+        .collect();
+    let mut cands: Vec<Candidate> = posts
+        .iter()
+        .filter(|p| p.author_id != viewer_id)
+        .map(|p| Candidate {
+            post_id: p.post_id,
+            author_id: p.author_id,
+            created_at: p.created_at,
+            likes: p.likes,
+            comments: p.comments,
+            length_chars: p.length_chars,
+            is_followed: followed.contains(&p.author_id),
+        })
+        .collect();
+    cands.sort_by_key(|c| c.post_id);
+    cands
+}
+
+/// Chequeos de la aplicación (algoritmo / hashes) sobre un journal ya
+/// verificado criptográficamente. Independientes del STARK: sirven en CI
+/// con receipts de desarrollo y en `verifier-cli`.
+pub fn claims_match(
+    journal: &Journal,
+    expect_algorithm: Option<u8>,
+    expect_feed_hash: Option<&[u8; 32]>,
+    expect_candidates_hash: Option<&[u8; 32]>,
+) -> bool {
+    if let Some(alg) = expect_algorithm {
+        if journal.algorithm_id != alg {
+            return false;
+        }
+    }
+    if let Some(h) = expect_feed_hash {
+        if &journal.feed_hash != h {
+            return false;
+        }
+    }
+    if let Some(h) = expect_candidates_hash {
+        if &journal.candidates_hash != h {
+            return false;
+        }
+    }
+    true
+}
+
+// ---------------------------------------------------------------------------
 // Scores
 // ---------------------------------------------------------------------------
 
@@ -557,5 +674,85 @@ mod tests {
         assert_eq!(j.feed_hash, hash_feed(&feed));
         assert_eq!(j.candidates_hash, hash_candidates(&i.candidates));
         assert_eq!(j.timestamp, NOW);
+    }
+
+    #[test]
+    fn candidacy_rejects_unsorted_duplicates_and_self_posts() {
+        let mut i = input(ALG_WELLBEING, dataset(8));
+        assert!(check_candidacy(&i).is_ok());
+
+        i.candidates.swap(0, 1);
+        assert_eq!(check_candidacy(&i), Err(CandidacyError::UnsortedPostIds));
+
+        let mut dup = input(ALG_WELLBEING, dataset(4));
+        dup.candidates[1].post_id = dup.candidates[0].post_id;
+        assert_eq!(check_candidacy(&dup), Err(CandidacyError::DuplicatePostId));
+
+        let mut self_post = input(ALG_WELLBEING, dataset(4));
+        self_post.candidates[0].author_id = self_post.config.user_id;
+        assert_eq!(check_candidacy(&self_post), Err(CandidacyError::IncludesViewer));
+    }
+
+    #[test]
+    fn assemble_candidates_matches_canonical_hash() {
+        let posts = vec![
+            PublicPost {
+                post_id: 2,
+                author_id: 7,
+                created_at: NOW - 60,
+                likes: 3,
+                comments: 1,
+                length_chars: 200,
+            },
+            PublicPost {
+                post_id: 1,
+                author_id: 42,
+                created_at: NOW - 120,
+                likes: 0,
+                comments: 0,
+                length_chars: 80,
+            },
+            PublicPost {
+                post_id: 3,
+                author_id: 8,
+                created_at: NOW - 30,
+                likes: 9,
+                comments: 2,
+                length_chars: 400,
+            },
+        ];
+        let follows = vec![FollowEdge {
+            follower_id: 42,
+            followee_id: 8,
+        }];
+        let cands = assemble_candidates(42, &posts, &follows);
+        assert_eq!(cands.len(), 2);
+        assert_eq!(cands[0].post_id, 2);
+        assert!(!cands[0].is_followed);
+        assert_eq!(cands[1].post_id, 3);
+        assert!(cands[1].is_followed);
+        let input = input(ALG_WELLBEING, cands.clone());
+        assert!(check_candidacy(&input).is_ok());
+        assert_eq!(hash_candidates(&cands), hash_candidates(&input.candidates));
+    }
+
+    #[test]
+    fn claims_match_rejects_wrong_algorithm_and_hashes() {
+        let i = input(ALG_WELLBEING, dataset(12));
+        let feed = rank(&i);
+        let j = make_journal(&i, &feed);
+        assert!(claims_match(
+            &j,
+            Some(ALG_WELLBEING),
+            Some(&j.feed_hash),
+            Some(&j.candidates_hash)
+        ));
+        assert!(!claims_match(&j, Some(ALG_ENGAGEMENT), None, None));
+        let mut wrong_feed = j.feed_hash;
+        wrong_feed[0] ^= 1;
+        assert!(!claims_match(&j, None, Some(&wrong_feed), None));
+        let mut wrong_cands = j.candidates_hash;
+        wrong_cands[0] ^= 1;
+        assert!(!claims_match(&j, None, None, Some(&wrong_cands)));
     }
 }

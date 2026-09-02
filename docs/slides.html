@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>inZKtagram — ECI 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #eef3ef;
+      --card: #fbfcfb;
+      --ink: #3a4a42;
+      --muted: #5a6b63;
+      --line: #dce6df;
+      --sage: #5c7f6e;
+      --sage-soft: #e4eee8;
+      --lav: #6d7aa8;
+      --fail: #b07a74;
+      --ok: #5c7f6e;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: Nunito, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    .deck { height: 100%; }
+    .slide {
+      display: none;
+      height: 100%;
+      padding: 4.5rem 6rem 5rem;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .slide.on { display: flex; }
+    h1, h2 { margin: 0 0 1rem; font-weight: 800; letter-spacing: -0.02em; }
+    h1 { font-size: 3.1rem; }
+    h2 { font-size: 2.2rem; }
+    .logo {
+      font-family: "Great Vibes", cursive;
+      font-size: 4.4rem;
+      font-weight: 400;
+      color: var(--sage);
+      margin: 0 0 0.4rem;
+    }
+    p, li { font-size: 1.28rem; line-height: 1.45; }
+    .muted { color: var(--muted); }
+    .kicker { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.85rem; color: var(--sage); font-weight: 700; margin-bottom: 0.6rem; }
+    ul { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+    li { margin: 0.35rem 0; }
+    .row { display: flex; gap: 1.2rem; margin-top: 1.2rem; }
+    .card {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 1.1rem 1.2rem;
+    }
+    .card h3 { margin: 0 0 0.4rem; font-size: 1.1rem; }
+    .card.bad { border-color: #ead4d1; }
+    .card.good { border-color: #cfe0d6; }
+    code, pre {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 0.95rem;
+    }
+    pre {
+      background: var(--sage-soft);
+      padding: 0.9rem 1rem;
+      border-radius: 12px;
+      overflow: auto;
+    }
+    table { border-collapse: collapse; width: 100%; font-size: 1.05rem; margin-top: 0.8rem; }
+    th, td { text-align: left; padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--line); }
+    th { color: var(--sage); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    footer.bar {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.7rem 1.4rem;
+      color: var(--muted); font-size: 0.85rem;
+      background: linear-gradient(transparent, var(--bg) 40%);
+    }
+    .progress { height: 3px; background: var(--sage); position: fixed; left: 0; top: 0; }
+    kbd {
+      border: 1px solid var(--line); border-radius: 6px; padding: 0.05rem 0.4rem;
+      background: var(--card); font-size: 0.8rem;
+    }
+    .quote {
+      font-size: 1.45rem; font-weight: 700; max-width: 42rem; line-height: 1.35;
+    }
+    @media print {
+      .slide { display: flex; height: 100vh; page-break-after: always; }
+      footer.bar { display: none; }
+      .progress { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="bar"></div>
+  <div class="deck" id="deck">
+
+    <section class="slide on">
+      <div class="kicker">ECI 2026 · Building Cryptographic Proofs</div>
+      <p class="logo">inZKtagram</p>
+      <h1>A feed you can check</h1>
+      <p class="muted">The user chooses the ranking algorithm. A RISC Zero STARK proves the platform used that choice.</p>
+      <p class="muted" style="margin-top:1.6rem">Juan Pose · paper: ZKML (EuroSys 2024) → verifiable recommendation</p>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">Problem</div>
+      <h2>Recommendation is a promise</h2>
+      <p>Platforms <em>declare</em> a ranking policy. DSA-style “pick a non-profiled feed” is still a declaration.</p>
+      <p>Without a proof, “we used Wellbeing” is unverifiable. The ZK proof is the product, not decoration.</p>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">Three algorithms · one crate</div>
+      <h2>What the user can pick</h2>
+      <div class="row">
+        <div class="card bad">
+          <h3>1 · Engagement</h3>
+          <p>Recency, virality, short bait, novelty from accounts you do not follow. The dopamine loop.</p>
+        </div>
+        <div class="card good">
+          <h3>2 · Wellbeing</h3>
+          <p>Followed accounts only, long-form, mostly chronological. No likes in the score.</p>
+        </div>
+        <div class="card">
+          <h3>3 · Mixed</h3>
+          <p>60/40 blend, author-repetition cap. A compromise, still deterministic.</p>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:1.2rem"><code>feed-core</code> is compiled on the host <em>and</em> in the guest. Same function, same feed.</p>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">Statement</div>
+      <h2>What is proved</h2>
+      <p class="quote">Feed <code>F</code> is <code>rank(A, params, candidates, now)</code>, and <code>A</code> is the algorithm in the user’s committed config.</p>
+      <ul>
+        <li><strong>Public (journal):</strong> algorithm id, hashes of config / params / candidates / feed, timestamp, image ID.</li>
+        <li><strong>Witness:</strong> likes, follows, lengths, full candidate vectors — not in the journal.</li>
+        <li><strong>Prover → verifier:</strong> server proves to the user or any auditor.</li>
+      </ul>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">Why a zkVM</div>
+      <h2>STARKs, not a Halo2 circuit</h2>
+      <ul>
+        <li>ZKML compiles TensorFlow → Halo2 SNARK. Great for ML ops; painful for <code>sort</code> / <code>if</code> / author caps.</li>
+        <li>RISC Zero lets us prove the real Rust ranker in a month, with a transparent setup.</li>
+        <li>Cost: receipts of hundreds of KB, prover in minutes on CPU. Verification stays milliseconds.</li>
+        <li>We measure that cost against native <code>rank()</code> and against ZKML’s DLRM/MNIST numbers.</li>
+      </ul>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">Live demo</div>
+      <h2>What to show</h2>
+      <ol>
+        <li>Pick Wellbeing → long posts from followed accounts.</li>
+        <li>Switch to Engagement → viral bait from accounts nobody follows.</li>
+        <li><strong>Verify</strong> → green. Browser recomputes <code>feed_hash</code>.</li>
+        <li>Settings → malicious server → Verify fails: proved algorithm ≠ displayed feed.</li>
+        <li>Download the receipt → <code>verify.cmd</code> (do not trust the UI’s STARK tick).</li>
+      </ol>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">Trust model</div>
+      <h2>Integrity, not input honesty</h2>
+      <div class="row">
+        <div class="card good">
+          <h3>Proved</h3>
+          <p>This execution of this image ID produced this journal. Illegal candidate lists (unsorted, duplicates, own posts) abort the guest.</p>
+        </div>
+        <div class="card bad">
+          <h3>Not proved</h3>
+          <p>The candidate set is complete. The UI STARK check is a courtesy HTTP call. A transparency log of posts is out of scope.</p>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:1rem">Auditor: <code>GET /api/audit/{id}</code> → <code>verifier-cli --candidates dump.json</code> compares <code>candidates_hash</code>.</p>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">Evaluation</div>
+      <h2>Tests and measurements</h2>
+      <ul>
+        <li><strong>Completeness (CI):</strong> guest journal = native rank.</li>
+        <li><strong>Application soundness (CI):</strong> illegal inputs abort; wrong algorithm / feed hash claims fail.</li>
+        <li><strong>Cryptographic soundness:</strong> real STARK passed in 49 s; tampered journal and wrong image ID rejected.</li>
+        <li><strong>N=50 Mixed:</strong> 96.7 s prove · 21 ms verify · 263 KB receipt · 16 µs native (~6 000×).</li>
+      </ul>
+      <p class="muted">Full table: <code>benchmarks/results.csv</code> · Ryzen 7 2700X, Docker Linux.</p>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">Takeaway</div>
+      <h2>Choice you can check</h2>
+      <p>The interesting object is not a smarter ranker. It is a <strong>checkable binding</strong> between the algorithm the user picked and the feed they saw.</p>
+      <p class="muted">ZKML showed verifiable inference for committed models. inZKtagram shows verifiable ranking for a committed user choice.</p>
+    </section>
+
+  </div>
+  <footer class="bar">
+    <span>inZKtagram · ECI 2026 SNARKs</span>
+    <span><kbd>←</kbd> <kbd>→</kbd> <kbd>f</kbd> fullscreen · <span id="pos">1 / 9</span></span>
+  </footer>
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    let i = 0;
+    const pos = document.getElementById("pos");
+    const bar = document.getElementById("bar");
+    function show(n) {
+      i = (n + slides.length) % slides.length;
+      slides.forEach((s, k) => s.classList.toggle("on", k === i));
+      pos.textContent = (i + 1) + " / " + slides.length;
+      bar.style.width = ((i + 1) / slides.length * 100) + "%";
+    }
+    document.addEventListener("keydown", (e) => {
+      if (["ArrowRight", "PageDown", " ", "Enter"].includes(e.key)) { e.preventDefault(); show(i + 1); }
+      if (["ArrowLeft", "PageUp", "Backspace"].includes(e.key)) { e.preventDefault(); show(i - 1); }
+      if (e.key === "Home") show(0);
+      if (e.key === "End") show(slides.length - 1);
+      if (e.key === "f") document.documentElement.requestFullscreen?.();
+    });
+    document.addEventListener("click", (e) => {
+      if (e.target.closest("a, button, kbd")) return;
+      show(e.clientX > innerWidth / 2 ? i + 1 : i - 1);
+    });
+    show(0);
+  </script>
+</body>
+</html>

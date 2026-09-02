@@ -1,4 +1,4 @@
-import { ALGORITHMS } from "../api";
+import { useI18n } from "../i18n";
 import { AlertIcon, CheckIcon, ShieldIcon } from "./Icons";
 
 interface Props {
@@ -18,17 +18,14 @@ export default function SettingsPage({
   onSelect,
   onToggleMalicious,
 }: Props) {
+  const { t, algorithms } = useI18n();
   return (
     <div className="settings">
-      <h2 className="page-title">Tu algoritmo de recomendación</h2>
-      <p className="muted settings-intro">
-        Acá mandás vos. Elegí cómo se ordena tu feed; cada vez que lo abras, la
-        plataforma generará una prueba de conocimiento cero (RISC Zero) de que
-        usó exactamente el algoritmo que elegiste.
-      </p>
+      <h2 className="page-title">{t("settingsTitle")}</h2>
+      <p className="muted settings-intro">{t("settingsIntro")}</p>
 
       <div className="alg-cards">
-        {ALGORITHMS.map((alg) => {
+        {algorithms.map((alg) => {
           const active = alg.id === algorithmId;
           return (
             <button
@@ -57,13 +54,9 @@ export default function SettingsPage({
 
       <section className="settings-zk">
         <h3>
-          <ShieldIcon size={18} /> Verificabilidad
+          <ShieldIcon size={18} /> {t("settingsZk")}
         </h3>
-        <p className="muted">
-          El programa que rankea tu feed dentro de la zkVM está identificado
-          públicamente por su image ID. Cualquiera puede recompilarlo desde el
-          código fuente y comprobar que coincide:
-        </p>
+        <p className="muted">{t("settingsZkBody")}</p>
         <code className="hash hash-block" title={imageId}>
           {imageId}
         </code>
@@ -71,14 +64,9 @@ export default function SettingsPage({
 
       <section className="settings-demo">
         <h3>
-          <AlertIcon size={18} /> Demo: servidor malicioso
+          <AlertIcon size={18} /> {t("settingsMalicious")}
         </h3>
-        <p className="muted">
-          Activá esto para simular una plataforma deshonesta: servirá el feed
-          con el algoritmo <strong>Engagement</strong> aunque afirme usar el que
-          elegiste. Después tocá «Verificar» en tu feed y mirá cómo la prueba ZK
-          detecta el engaño.
-        </p>
+        <p className="muted">{t("settingsMaliciousBody")}</p>
         <label className="toggle">
           <input
             type="checkbox"
@@ -86,7 +74,7 @@ export default function SettingsPage({
             onChange={(e) => onToggleMalicious(e.target.checked)}
           />
           <span className="toggle-track" />
-          <span>{malicious ? "Servidor malicioso ACTIVO" : "Servidor honesto"}</span>
+          <span>{malicious ? t("maliciousOn") : t("maliciousOff")}</span>
         </label>
       </section>
     </div>

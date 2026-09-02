@@ -1,0 +1,16 @@
+# Real STARK completeness + soundness
+# docker run --rm -e RISC0_DEV_MODE=0 inzktagram-builder \
+#   cargo test --release -p inzktagram-server --test real_proofs -- --ignored --nocapture
+#
+# Host: AMD Ryzen 7 2700X (Docker Linux), 2026-09-02
+# Image ID: dc540a23ea9f26218acb7185a2352ce6d6d88370088847085eb506ee06bbb812
+
+   Compiling inzktagram-methods v0.1.0
+   Compiling inzktagram-server v0.1.0
+    Finished `release` profile [optimized] target(s) in 56.01s
+     Running tests/real_proofs.rs
+
+running 1 test
+test completeness_and_soundness_real ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 48.72s

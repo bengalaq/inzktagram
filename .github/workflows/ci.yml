@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    # STARK reales: no en cada push. Lunes 04:00 UTC o a mano (workflow_dispatch).
+    - cron: "0 4 * * 1"
 
 env:
   RISC0_VERSION: "3.0.6"
@@ -35,6 +38,11 @@ jobs:
 
       - name: Completeness del pipeline ZK (guest == host, dev-mode)
         run: cargo test -p inzktagram-server --test completeness_dev
+        env:
+          RISC0_DEV_MODE: "1"
+
+      - name: Soundness de aplicación (guest rechaza inputs ilegales; claims)
+        run: cargo test -p inzktagram-server --test application_checks
         env:
           RISC0_DEV_MODE: "1"
 

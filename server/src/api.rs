@@ -26,6 +26,7 @@ pub fn router() -> Router<Arc<AppState>> {
         .route("/proofs/{view_id}", get(proof_status))
         .route("/proofs/{view_id}/verify", post(verify_proof))
         .route("/proofs/{view_id}/receipt", get(download_receipt))
+        .route("/audit/{user_id}", get(audit_dump))
 }
 
 // ---------------------------------------------------------------------------
@@ -257,6 +258,8 @@ async fn get_feed(
         candidates,
         now,
     };
+    feed_core::check_candidacy(&proof_input)
+        .map_err(|e| bad_request(&format!("candidacy rule violated: {e}")))?;
     let algorithm_served = if malicious {
         ALG_ENGAGEMENT
     } else {
@@ -287,7 +290,7 @@ async fn get_feed(
 
     // Posts del feed en el orden servido, con datos del autor.
     let mut post_stmt = db.prepare(
-        "SELECT p.id, p.content, p.created_at, p.likes, p.comments,
+        "SELECT p.id, p.content, p.content_en, p.created_at, p.likes, p.comments,
                 u.username, u.display_name, u.avatar_color,
                 EXISTS(SELECT 1 FROM follows f WHERE f.follower_id = ?1 AND f.followee_id = p.author_id)
          FROM posts p JOIN users u ON u.id = p.author_id WHERE p.id = ?2",
@@ -298,13 +301,14 @@ async fn get_feed(
             Ok(json!({
                 "id": r.get::<_, i64>(0)?,
                 "content": r.get::<_, String>(1)?,
-                "created_at": r.get::<_, i64>(2)?,
-                "likes": r.get::<_, i64>(3)?,
-                "comments": r.get::<_, i64>(4)?,
-                "username": r.get::<_, String>(5)?,
-                "display_name": r.get::<_, String>(6)?,
-                "avatar_color": r.get::<_, String>(7)?,
-                "is_followed": r.get::<_, i64>(8)? != 0,
+                "content_en": r.get::<_, Option<String>>(2)?,
+                "created_at": r.get::<_, i64>(3)?,
+                "likes": r.get::<_, i64>(4)?,
+                "comments": r.get::<_, i64>(5)?,
+                "username": r.get::<_, String>(6)?,
+                "display_name": r.get::<_, String>(7)?,
+                "avatar_color": r.get::<_, String>(8)?,
+                "is_followed": r.get::<_, i64>(9)? != 0,
             }))
         })?;
         posts.push(post);
@@ -465,4 +469,66 @@ async fn download_receipt(
         bytes,
     )
         .into_response())
+}
+
+/// Dump público para que un auditor reconstruya `candidates_hash` en local.
+/// No es una fuente de verdad: el servidor podría omitir posts. El valor
+/// está en el *método* (recomputar el hash y compararlo con el journal).
+async fn audit_dump(
+    State(st): State<Arc<AppState>>,
+    Path(user_id): Path<u64>,
+) -> ApiResult<Json<Value>> {
+    use feed_core::{assemble_candidates, hash_candidates, FollowEdge, PublicPost};
+
+    let db = st.db.lock().await;
+    let exists: i64 = db
+        .query_row(
+            "SELECT COUNT(*) FROM users WHERE id = ?1",
+            params![user_id as i64],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    if exists == 0 {
+        return Err(not_found("usuario"));
+    }
+
+    let mut post_stmt = db.prepare(
+        "SELECT id, author_id, created_at, likes, comments, LENGTH(content) FROM posts ORDER BY id",
+    )?;
+    let posts: Vec<PublicPost> = post_stmt
+        .query_map([], |r| {
+            Ok(PublicPost {
+                post_id: r.get::<_, i64>(0)? as u64,
+                author_id: r.get::<_, i64>(1)? as u64,
+                created_at: r.get::<_, i64>(2)? as u64,
+                likes: r.get::<_, i64>(3)? as u32,
+                comments: r.get::<_, i64>(4)? as u32,
+                length_chars: r.get::<_, i64>(5)? as u32,
+            })
+        })?
+        .collect::<Result<_, _>>()?;
+    drop(post_stmt);
+
+    let mut follow_stmt = db.prepare("SELECT follower_id, followee_id FROM follows")?;
+    let follows: Vec<FollowEdge> = follow_stmt
+        .query_map([], |r| {
+            Ok(FollowEdge {
+                follower_id: r.get::<_, i64>(0)? as u64,
+                followee_id: r.get::<_, i64>(1)? as u64,
+            })
+        })?
+        .collect::<Result<_, _>>()?;
+    drop(follow_stmt);
+
+    let assembled = assemble_candidates(user_id, &posts, &follows);
+
+    Ok(Json(json!({
+        "untrusted": true,
+        "note": "Recompute candidates_hash locally and compare it to the receipt journal. This dump is a convenience, not a transparency log.",
+        "user_id": user_id,
+        "posts": posts,
+        "follows": follows,
+        "candidates_hash": hex::encode(hash_candidates(&assembled)),
+        "n_candidates": assembled.len(),
+    })))
 }

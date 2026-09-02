@@ -14,5 +14,17 @@ services:
       - ./download_receipts:/receipts:ro
     restart: unless-stopped
 
+  zkbench:
+    build: .
+    image: inzktagram:local
+    profiles: ["bench"]
+    environment:
+      RISC0_DEV_MODE: "0"
+      ZKBENCH_N: ${ZKBENCH_N:-25,50,100,200}
+    volumes:
+      - ./benchmarks:/app/benchmarks
+    working_dir: /app
+    command: ["zkbench"]
+
 volumes:
   inzktagram-data:

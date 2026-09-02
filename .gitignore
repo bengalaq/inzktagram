@@ -7,7 +7,20 @@ web/dist/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+/target
+methods/guest/target
+
+node_modules/
+web/dist/
+
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
 *.receipt
-benchmarks/results*.csv
+
+# Dev-mode CSVs; the delivered table lives at benchmarks/results.csv
+benchmarks/results-dev*.csv
+
+.DS_Store
 
 .DS_Store

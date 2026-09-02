@@ -1,4 +1,5 @@
-import { algorithmName, VerifyResponse } from "../api";
+import { VerifyResponse } from "../api";
+import { useI18n } from "../i18n";
 import { AlertIcon, CheckIcon, DownloadIcon, XIcon } from "./Icons";
 
 export interface VerificationResult {
@@ -48,6 +49,7 @@ export default function VerifyModal({
   receiptUrl,
   onClose,
 }: Props) {
+  const { t, algorithmName, localeTag } = useI18n();
   if (!open) return null;
   const j = result?.server.journal;
 
@@ -55,8 +57,8 @@ export default function VerifyModal({
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <header className="modal-head">
-          <h2>Verificación ZK del feed</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="Cerrar">
+          <h2>{t("verifyTitle")}</h2>
+          <button className="icon-btn" onClick={onClose} aria-label={t("close")}>
             <XIcon />
           </button>
         </header>
@@ -65,10 +67,7 @@ export default function VerifyModal({
           <div className="verify-loading">
             <div className="spinner" />
             <p>{loadingLabel}</p>
-            <p className="muted">
-              La prueba STARK certifica la ejecución del algoritmo dentro de la
-              zkVM de RISC Zero.
-            </p>
+            <p className="muted">{t("verifyHint")}</p>
           </div>
         )}
 
@@ -83,35 +82,36 @@ export default function VerifyModal({
             <div className={`verify-verdict ${result.verdict ? "ok" : "fail"}`}>
               {result.verdict ? (
                 <>
-                  <CheckIcon /> Feed verificado: la plataforma usó el algoritmo
-                  que elegiste
+                  <CheckIcon /> {t("verifyOk")}
                 </>
               ) : (
                 <>
-                  <XIcon /> Verificación FALLIDA: la plataforma no respetó tu
-                  elección
+                  <XIcon /> {t("verifyFail")}
                 </>
               )}
             </div>
 
             <ul className="check-list">
               <CheckRow ok={result.server.checks.proof_valid}>
-                Prueba STARK válida para el programa{" "}
-                <Hash value={result.server.image_id} /> (verificada en{" "}
-                {result.server.verify_ms} ms)
+                {t("verifyStark")} <Hash value={result.server.image_id} />{" "}
+                {t("verifyStarkMs", { ms: result.server.verify_ms })}
               </CheckRow>
               <CheckRow ok={result.algorithmMatches}>
-                Algoritmo probado{" "}
-                <strong>{j ? `${j.algorithm_id} · ${j.algorithm_name}` : "—"}</strong>{" "}
-                coincide con tu elección{" "}
+                {t("verifyAlgProved")}{" "}
+                <strong>
+                  {j
+                    ? `${j.algorithm_id} · ${algorithmName(j.algorithm_id)}`
+                    : "—"}
+                </strong>{" "}
+                {t("verifyAlgMatches")}{" "}
                 <strong>
                   {result.algorithmExpected} · {algorithmName(result.algorithmExpected)}
                 </strong>
               </CheckRow>
               <CheckRow ok={result.localFeedMatches}>
-                El hash del feed que ves (<Hash value={result.localFeedHash} />,
-                calculado en tu navegador) coincide con el certificado en la
-                prueba {j && <Hash value={j.feed_hash} />}
+                {t("verifyFeedHashBefore")}
+                <Hash value={result.localFeedHash} />
+                {t("verifyFeedHashMid")} {j && <Hash value={j.feed_hash} />}
               </CheckRow>
             </ul>
 
@@ -120,12 +120,10 @@ export default function VerifyModal({
                 <div className="demo-reveal">
                   <AlertIcon size={18} />
                   <span>
-                    Demo: el servidor estaba en modo malicioso. Sirvió el
-                    algoritmo{" "}
-                    <strong>{algorithmName(result.server.algorithm_served)}</strong>{" "}
-                    mientras afirmaba usar{" "}
-                    <strong>{algorithmName(result.server.algorithm_claimed)}</strong>
-                    . La prueba ZK lo delató.
+                    {t("verifyDemoReveal", {
+                      served: algorithmName(result.server.algorithm_served),
+                      claimed: algorithmName(result.server.algorithm_claimed),
+                    })}
                   </span>
                 </div>
               )}
@@ -133,37 +131,36 @@ export default function VerifyModal({
             {result.server.dev_mode && (
               <div className="dev-warning">
                 <AlertIcon size={18} />
-                <span>
-                  El servidor corre con RISC0_DEV_MODE: este receipt es de
-                  desarrollo, no una prueba STARK real.
-                </span>
+                <span>{t("verifyDevMode")}</span>
               </div>
             )}
 
             {j && (
               <details className="journal-details">
-                <summary>Journal completo (parte pública de la prueba)</summary>
+                <summary>{t("journalTitle")}</summary>
                 <dl>
-                  <dt>Hash de tu configuración</dt>
+                  <dt>{t("journalConfig")}</dt>
                   <dd><Hash value={j.config_hash} /></dd>
-                  <dt>Hash de parámetros del algoritmo</dt>
+                  <dt>{t("journalParams")}</dt>
                   <dd><Hash value={j.params_hash} /></dd>
-                  <dt>Hash del conjunto de candidatos</dt>
+                  <dt>{t("journalCandidates")}</dt>
                   <dd><Hash value={j.candidates_hash} /></dd>
-                  <dt>Hash del feed resultante</dt>
+                  <dt>{t("journalFeed")}</dt>
                   <dd><Hash value={j.feed_hash} /></dd>
-                  <dt>Timestamp del cómputo</dt>
-                  <dd>{new Date(j.timestamp * 1000).toLocaleString("es")}</dd>
+                  <dt>{t("journalTime")}</dt>
+                  <dd>{new Date(j.timestamp * 1000).toLocaleString(localeTag)}</dd>
                 </dl>
               </details>
             )}
 
             <div className="verify-trustless">
-              <h3>¿No confiás en esta pantalla? Verificalo vos</h3>
+              <h3>{t("trustlessTitle")}</h3>
               <p>
-                Descargá el receipt, ponelo en la carpeta{" "}
-                <code>download_receipts</code> del proyecto y corré esto desde{" "}
-                <code>inzktagram/</code>:
+                {t("trustlessBefore")}
+                <code>download_receipts</code>
+                {t("trustlessMid")}
+                <code>inzktagram/</code>
+                {t("trustlessAfter")}
               </p>
               {receiptUrl && (
                 <a
@@ -171,10 +168,11 @@ export default function VerifyModal({
                   href={receiptUrl}
                   download={`inzktagram_view_${viewId}.receipt`}
                 >
-                  <DownloadIcon size={16} /> Descargar receipt
+                  <DownloadIcon size={16} /> {t("downloadReceipt")}
                 </a>
               )}
               <pre className="cli-sample">{`.\\verify.cmd inzktagram_view_${viewId}.receipt --expect-algorithm ${result.algorithmExpected} --expect-feed-hash ${result.localFeedHash}`}</pre>
+              <p className="muted">{t("trustlessAudit")}</p>
             </div>
           </>
         )}

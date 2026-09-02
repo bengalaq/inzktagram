@@ -7,6 +7,7 @@ use risc0_zkvm::guest::env;
 
 fn main() {
     let input: FeedInput = env::read();
+    feed_core::check_candidacy(&input).expect("candidacy rule violated");
     let feed_ids = feed_core::rank(&input);
     let journal = feed_core::make_journal(&input, &feed_ids);
     env::commit(&journal);

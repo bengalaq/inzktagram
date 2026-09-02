@@ -1,0 +1,2 @@
+# hardware: (filled by zkbench)
+# Keep this directory for `docker compose --profile bench run --rm zkbench`.

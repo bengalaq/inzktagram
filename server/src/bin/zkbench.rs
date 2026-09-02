@@ -38,7 +38,7 @@ fn synth_candidates(n: u64) -> Vec<Candidate> {
 fn make_input(n: u64, alg: u8) -> FeedInput {
     FeedInput {
         config: UserConfig {
-            user_id: 1,
+            user_id: 99,
             algorithm_id: alg,
             nonce: 1,
         },
@@ -48,15 +48,47 @@ fn make_input(n: u64, alg: u8) -> FeedInput {
     }
 }
 
+fn sizes_from_env() -> Vec<u64> {
+    std::env::var("ZKBENCH_N")
+        .ok()
+        .map(|s| {
+            s.split(',')
+                .filter_map(|p| p.trim().parse().ok())
+                .collect()
+        })
+        .filter(|v: &Vec<u64>| !v.is_empty())
+        .unwrap_or_else(|| vec![25, 50, 100, 200])
+}
+
+fn hardware_line() -> String {
+    let cpu = std::fs::read_to_string("/proc/cpuinfo")
+        .ok()
+        .and_then(|s| {
+            s.lines()
+                .find(|l| l.starts_with("model name"))
+                .map(|l| l.split(':').nth(1).unwrap_or("").trim().to_string())
+        })
+        .unwrap_or_else(|| std::env::consts::ARCH.to_string());
+    let cores = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
+    format!("{cpu} ({cores} threads), os={}", std::env::consts::OS)
+}
+
 fn main() -> anyhow::Result<()> {
     let dev = prover_dev_mode();
     if dev {
-        eprintln!("ADVERTENCIA: RISC0_DEV_MODE activo; los resultados NO son medidas reales.");
+        eprintln!("WARNING: RISC0_DEV_MODE is on; numbers are NOT real STARK measurements.");
     }
     println!("zkbench — image ID: {}", prover::image_id_hex());
+    let hw = hardware_line();
+    println!("hardware: {hw}");
 
+    let sizes = sizes_from_env();
     std::fs::create_dir_all("benchmarks")?;
     let mut csv = std::fs::File::create("benchmarks/results.csv")?;
+    writeln!(csv, "# hardware: {hw}")?;
+    writeln!(csv, "# image_id: {}", prover::image_id_hex())?;
     writeln!(
         csv,
         "n,algorithm,algorithm_name,user_cycles,proving_ms,verify_us,receipt_kb,native_us,dev_mode"
@@ -64,10 +96,10 @@ fn main() -> anyhow::Result<()> {
 
     println!(
         "{:>5} {:>12} {:>12} {:>11} {:>10} {:>11} {:>10}",
-        "N", "algoritmo", "ciclos", "prove(ms)", "verif(us)", "receipt(KB)", "nativo(us)"
+        "N", "algorithm", "cycles", "prove(ms)", "verif(us)", "receipt(KB)", "native(us)"
     );
 
-    for n in [25u64, 50, 100, 200] {
+    for n in sizes {
         for alg in 1u8..=3 {
             let input = make_input(n, alg);
 
@@ -94,8 +126,9 @@ fn main() -> anyhow::Result<()> {
                 "{n},{alg},{name},{},{},{verify_us},{receipt_kb:.1},{native_us},{dev}",
                 res.user_cycles, res.proving_ms
             )?;
+            csv.flush()?;
         }
     }
-    println!("\nResultados guardados en benchmarks/results.csv");
+    println!("\nResults written to benchmarks/results.csv");
     Ok(())
 }
